@@ -1,3 +1,5 @@
+include <ball-bearing/ball-bearing.scad>;
+
 bobine_diameter=200;
 bobine_height=105;
 bobine_center=50;
@@ -47,8 +49,8 @@ module axle() {
                     linear_extrude(height=bobine_height+axle_buffer,twist=-360,slices=300) translate([-real_internal_cube/2,-real_internal_cube/2,0]) square([real_internal_cube,real_internal_cube]);
                 }
             }
-            ring(in=real_axle_diameter,out=real_axle_diameter+axle_clip,h=1);
-            translate([0,0,support_height-axle_clip]) ring(in=real_axle_diameter,out=real_axle_diameter+axle_clip,h=1);
+            ring(in=real_axle_diameter,out=real_axle_diameter+axle_clip,h=axle_clip);
+            translate([0,0,support_height-axle_clip]) ring(in=real_axle_diameter,out=real_axle_diameter+axle_clip,h=axle_clip);
             translate([0,0,axle_buffer+bobine_height-axle_clip]) ring(in=real_axle_diameter,out=real_axle_diameter+axle_clip,h=axle_clip);
         }
         translate([-(axle_diameter+4)/2,-axle_clip]) cube([axle_diameter+4,axle_clip*2,axle_flex]);
@@ -64,18 +66,30 @@ module support() {
     difference() {
         union() {
             //round support for axle
-            translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2]) cylinder(d=2*support_border+axle_diameter,h=support_height);
+            //translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2]) cylinder(d=2*support_border+axle_diameter,h=support_height);
+            //ball bearing for axle
+            difference() {
+                translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2]) ballbearing(inner=2*support_border+axle_diameter-3*support_height,outer=2*support_border+axle_diameter,d=support_height,gap=play/3);
+                translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2]) ring(in=2*support_border+axle_diameter-3*support_height,out=2*support_border+axle_diameter-3*support_height+2*axle_clip+2*play,h=axle_clip+play);
+                translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2,support_height-1]) ring(in=2*support_border+axle_diameter-3*support_height,out=2*support_border+axle_diameter-3*support_height+axle_clip+2*play,h=axle_clip+play);
+            }
             //profile corner
             cube([support_border,profile_height+support_border,support_height]);
             //top 
-            translate([-profile_height,0,0]) cube([support_bobine_clearance+(bobine_diameter/2)+profile_height,support_border,support_height]);
+            difference() {
+                translate([-profile_height,0,0]) cube([support_bobine_clearance+(bobine_diameter/2)+profile_height,support_border,support_height]);
+                translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2]) cylinder(d=2*support_border+axle_diameter,h=support_height);
+            }
             //bottom
             length = sqrt(pow(support_bobine_clearance+(bobine_diameter/2),2)+pow(support_border+axle_diameter-profile_height,2));
             angle =  acos((support_bobine_clearance+(bobine_diameter/2))/length);
-            translate([0,profile_height+support_border,0]) rotate([0,0,angle])translate([0,-support_border,0]) cube([length,support_border,support_height]);
+            difference() {
+                translate([0,profile_height+support_border,0]) rotate([0,0,angle])translate([0,-support_border,0]) cube([length,support_border,support_height]);
+                translate([support_bobine_clearance+(bobine_diameter/2),support_border+axle_diameter/2]) cylinder(d=2*support_border+axle_diameter,h=support_height);
+            }
             //support beams
             dlength = support_bobine_clearance+(bobine_diameter/2)+(axle_diameter/2);
-            for(i=[1:supports+1]) {
+            for(i=[1:supports]) {
                 previous_offset = log((i-1)*10/(supports+2))*(support_bobine_clearance+(bobine_diameter/2));
                 offset = log(i*10/(supports+2))*(support_bobine_clearance+(bobine_diameter/2));
                 //height = ((offset / (support_bobine_clearance+(bobine_diameter/2) + (axle_diameter/2))) * (profile_height + support_border)) + axle_diameter - (support_border);
@@ -105,16 +119,14 @@ module support() {
             translate([-profile_height-support_border,0,0]) cube([support_border,profile_height/2+support_border+profile_inset/2,support_height]);
             translate([-profile_height,support_border+profile_height/2-profile_inset/2,0]) linear_extrude(height=support_height) polygon(points=[[0,0],[profile_inset_deep,0],[0,profile_inset]], paths=[[0,1,2]]);
         }
-        translate([support_bobine_clearance+(bobine_diameter/2)+support_play,support_border+axle_diameter/2,-1]) cylinder(d=axle_diameter+2*support_play,support_height+2);
-        translate([support_bobine_clearance+(bobine_diameter/2)+support_play,support_border+axle_diameter/2]) ring(in=axle_diameter+2*support_play,out=axle_diameter+2*(axle_clip+support_play),h=axle_clip+support_play);
-        translate([support_bobine_clearance+(bobine_diameter/2)+support_play,support_border+axle_diameter/2,support_height-axle_clip-support_play]) ring(in=axle_diameter+2*support_play,out=axle_diameter+2*(axle_clip+support_play),h=axle_clip+support_play+1);
-        
+    //translate([support_bobine_clearance+(bobine_diameter/2)+support_play,support_border+axle_diameter/2,-1]) cylinder(d=axle_diameter+2*support_play,support_height+2);        //translate([support_bobine_clearance+(bobine_diameter/2)+support_play,support_border+axle_diameter/2]) ring(in=axle_diameter+2*support_play,out=axle_diameter+2*(axle_clip+support_play),h=axle_clip+support_play);    //translate([support_bobine_clearance+(bobine_diameter/2)+support_play,support_border+axle_diameter/2,support_height-axle_clip-support_play]) ring(in=axle_diameter+2*support_play,out=axle_diameter+2*(axle_clip+support_play),h=axle_clip+support_play+1);
     }    
 }
 
 //color([1,0,0,0.1]) translate([bobine_diameter/2,bobine_diameter/2,10]) bobine();
 //translate([bobine_diameter/2,bobine_diameter/2,0]) axle();
 //translate([-support_bobine_clearance,bobine_diameter/2-(axle_diameter/2)-support_border,0]) support();
-axle();
-//support();
+//axle();
+translate([-48,-18,0]) support();
+
 
