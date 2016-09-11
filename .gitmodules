@@ -1,0 +1,3 @@
+[submodule "ball-bearing"]
+	path = ball-bearing
+	url = https://github.com/cblomart/ball-bearing
